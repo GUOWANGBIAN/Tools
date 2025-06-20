@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>本地小工具库</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar">
+            <h1><i class="fas fa-toolbox"></i> 本地工具库</h1>
+            <div class="nav-links">
+                <a href="#" id="github-link"><i class="fab fa-github"></i> GitHub</a>
+                <a href="#" id="docs-link"><i class="fas fa-book"></i> 文档</a>
+            </div>
+        </nav>
+        
+        <div class="search-container">
+            <input type="text" id="search" placeholder="搜索工具..." autocomplete="off">
+        </div>
+        
+        <div class="tool-container" id="tools-container">
+            <!-- 工具卡片将通过JavaScript动态生成 -->
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

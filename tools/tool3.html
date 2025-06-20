@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>批量图片代码生成工具</title>
+    <style>
+        /* 基础样式 */
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+            /* 背景设置 */
+            background: url('/img/background.png') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+        }
+        
+        /* 主容器 */
+        .container {
+            display: flex;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        /* 左右面板 */
+        .panel {
+            width: 50%;
+            padding: 25px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .left-panel {
+            border-right: 1px solid #eee;
+        }
+        
+        /* 标题样式 */
+        h3 {
+            margin-top: 0;
+            color: #2c3e50;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        /* 输入组样式 */
+        .input-group {
+            margin-bottom: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        /* 固定大小的文本框 */
+        .fixed-textarea {
+            width: 100%;
+            height: 400px; /* 固定高度 */
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            resize: none; /* 禁止调整大小 */
+            box-sizing: border-box;
+            margin: 0 10px; /* 左右边距对称 */
+        }
+        
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            margin: 0 10px; /* 左右边距对称 */
+            box-sizing: border-box;
+        }
+        
+        /* 按钮样式 */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        button.secondary {
+            background-color: #e74c3c;
+        }
+        
+        button.secondary:hover {
+            background-color: #c0392b;
+        }
+        
+        /* 错误提示 */
+        .error-message {
+            color: #e74c3c;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .panel {
+                width: 100%;
+            }
+            
+            .left-panel {
+                border-right: none;
+                border-bottom: 1px solid #eee;
+            }
+            
+            .fixed-textarea {
+                height: 300px; /* 手机端稍小的高度 */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="panel left-panel">
+            <h3>批量输入配置</h3>
+            <div class="input-group">
+                <label for="urlList">批量图片网址（每行一个URL）</label>
+                <textarea id="urlList" class="fixed-textarea" placeholder="请输入图片URL，每行一个..."></textarea>
+            </div>
+            <div class="input-group">
+                <label for="xStart">初始X值</label>
+                <input type="number" id="xStart" placeholder="输入起始数字" value="1" min="1">
+                <div id="xError" class="error-message">初始X值必须≥1</div>
+            </div>
+            <div class="button-group">
+                <button onclick="generateBatchCode()">生成代码</button>
+            </div>
+        </div>
+        <div class="panel">
+            <h3>生成的批量代码</h3>
+            <div class="input-group">
+                <label for="outputCode">生成的HTML代码</label>
+                <textarea id="outputCode" class="fixed-textarea" placeholder="生成的代码将显示在这里..." readonly></textarea>
+            </div>
+            <div class="button-group">
+                <button onclick="copyCode()">复制代码</button>
+                <button class="secondary" onclick="clearOutput()">清除全部</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function validateXValue() {
+            const xInput = document.getElementById('xStart');
+            const errorElement = document.getElementById('xError');
+            const xValue = parseInt(xInput.value, 10);
+            
+            if (isNaN(xValue) || xValue < 1) {
+                errorElement.style.display = 'block';
+                xInput.style.borderColor = '#e74c3c';
+                return false;
+            } else {
+                errorElement.style.display = 'none';
+                xInput.style.borderColor = '#ddd';
+                return true;
+            }
+        }
+        
+        function generateBatchCode() {
+            if (!validateXValue()) {
+                return;
+            }
+            
+            const urlList = document.getElementById('urlList').value.trim();
+            let x = document.getElementById('xStart').value.trim();
+            
+            if (!urlList) {
+                alert('请输入至少一个图片URL');
+                return;
+            }
+            
+            x = parseInt(x, 10);
+            const urls = urlList.split('\n')
+                .map(url => url.trim())
+                .filter(url => url !== '');
+            
+            const result = urls.map(url => {
+                return `<img src="${url}" alt="Image ${x++}" onclick="window.open('${url}', '_blank')">`;
+            }).join('\n');
+            
+            document.getElementById('outputCode').value = result;
+        }
+        
+        function copyCode() {
+            const output = document.getElementById('outputCode');
+            output.select();
+            document.execCommand('copy');
+            
+            // 临时改变按钮文本提示用户
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '已复制!';
+            
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 2000);
+        }
+        
+        function clearOutput() {
+            if(confirm('确定要清除所有内容吗？')) {
+                document.getElementById('outputCode').value = '';
+                document.getElementById('urlList').value = '';
+                document.getElementById('xStart').value = '1';
+                document.getElementById('xError').style.display = 'none';
+                document.getElementById('xStart').style.borderColor = '#ddd';
+            }
+        }
+        
+        // 实时验证X值
+        document.getElementById('xStart').addEventListener('input', function() {
+            validateXValue();
+        });
+    </script>
+</body>
+</html>
