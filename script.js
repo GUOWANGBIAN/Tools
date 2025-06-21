@@ -7,8 +7,8 @@ const tools = [
         icon: "./img/tool1.jpg"  // 自定义图标路径
     },
     {
-        name: "计算器",
-        description: "简单实用的计算工具",
+        name: "图片压缩工具",
+        description: "简单实用的计算工具高效快速的图片压缩工具",
         filename: "tool2.html",
         icon: "img/tool2.png"  // 自定义图标路径
     },
