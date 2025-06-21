@@ -19,8 +19,8 @@ const tools = [
         icon: "./img/tool1.jpg"  // 自定义图标路径
     },
     {
-        name: "时间转换",
-        description: "各种时间格式转换",
+        name: "身份证信息提取",
+        description: "身份证信息提取",
         filename: "tool4.html",
         icon: "img/default-tool.png"  // 使用默认图标
     }
