@@ -10,7 +10,7 @@ const tools = [
         name: "图片压缩工具",
         description: "简单实用的计算工具高效快速的图片压缩工具",
         filename: "tool2.html",
-        icon: "./img/tool1.jpg"  // 自定义图标路径
+        icon: "./img/tool2.jpg"  // 自定义图标路径
     },
         {
         name: "图床连接处理",
