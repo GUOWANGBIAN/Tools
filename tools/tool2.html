@@ -470,7 +470,6 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     originalImg.src = e.target.result;
-                    
                     originalImg.onload = function() {
                         originalInfo.textContent = `
                             尺寸: ${originalImg.naturalWidth} × ${originalImg.naturalHeight} px
