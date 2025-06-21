@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel与身份证分析工具</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        /* 背景设置 - 用户可以替换这部分 */
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            color: #333;
+            /* 背景占位符 - 用户可以替换为自定义背景 */
+            background-image: url(/img/background.png);
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
+        }
+        
+        /* 内容区域半透明效果 */
+        .container {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        /* 主标题样式 */
+        h1, h2 {
+            color: #2c3e50;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        /* 上传区域样式 */
+        .upload-area {
+            border: 2px dashed #3498db;
+            border-radius: 5px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background-color: rgba(255, 255, 255, 0.7);
+        }
+        .upload-area:hover {
+            background-color: rgba(240, 248, 255, 0.9);
+        }
+        
+        /* 隐藏的文件输入 */
+        #fileInput {
+            display: none;
+        }
+        
+        /* 按钮样式 */
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        /* 表格样式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        
+        /* 结果区域样式 */
+        .result-area {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+        
+        /* 身份证信息卡片样式 */
+        .id-card {
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 15px;
+            }
+            button {
+                display: block;
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Excel与身份证分析工具</h1>
+        <p>上传Excel文件，自动分析数据并提取身份证信息</p>
+        
+        <div class="upload-area" id="uploadArea">
+            <h3>点击或拖放Excel文件到这里</h3>
+            <p>支持 .xlsx, .xls, .csv 格式</p>
+            <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+        </div>
+        
+        <div id="controls" style="display: none;">
+            <button id="analyzeBtn">分析数据</button>
+            <button id="extractIdBtn">提取身份证信息</button>
+            <button id="exportBtn" disabled>导出结果</button>
+            
+            <div class="result-area" id="resultArea"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('fileInput');
+            const uploadArea = document.getElementById('uploadArea');
+            const controls = document.getElementById('controls');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const extractIdBtn = document.getElementById('extractIdBtn');
+            const exportBtn = document.getElementById('exportBtn');
+            const resultArea = document.getElementById('resultArea');
+            
+            let workbook = null;
+            let analyzedData = [];
+            
+            // 上传区域点击事件
+            uploadArea.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            // 拖放功能
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.style.backgroundColor = 'rgba(225, 240, 250, 0.9)';
+            });
+            
+            uploadArea.addEventListener('dragleave', function() {
+                uploadArea.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
+            });
+            
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
+                
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFile(e.dataTransfer.files[0]);
+                }
+            });
+            
+            // 文件选择事件
+            fileInput.addEventListener('change', function() {
+                if (this.files.length) {
+                    handleFile(this.files[0]);
+                }
+            });
+            
+            // 分析按钮事件
+            analyzeBtn.addEventListener('click', function() {
+                analyzeData();
+            });
+            
+            // 提取身份证按钮事件
+            extractIdBtn.addEventListener('click', function() {
+                extractIdInfo();
+            });
+            
+            // 导出按钮事件
+            exportBtn.addEventListener('click', function() {
+                exportResults();
+            });
+            
+            // 处理上传的文件
+            function handleFile(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // 显示控制按钮
+                    controls.style.display = 'block';
+                    resultArea.innerHTML = '<p>文件已加载: ' + file.name + '</p>';
+                };
+                reader.readAsArrayBuffer(file);
+            }
+            
+            // 分析数据
+            function analyzeData() {
+                if (!workbook) return;
+                
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                analyzedData = XLSX.utils.sheet_to_json(worksheet);
+                
+                // 简单的数据分析
+                const columnNames = Object.keys(analyzedData[0] || {});
+                const rowCount = analyzedData.length;
+                
+                let analysisResult = '<h3>数据分析结果</h3>';
+                analysisResult += '<p>工作表: ' + firstSheetName + '</p>';
+                analysisResult += '<p>总行数: ' + rowCount + '</p>';
+                analysisResult += '<p>包含列: ' + columnNames.join(', ') + '</p>';
+                
+                // 显示前5行数据预览
+                analysisResult += '<h4>数据预览</h4>';
+                analysisResult += '<table><tr>';
+                columnNames.forEach(col => {
+                    analysisResult += '<th>' + col + '</th>';
+                });
+                analysisResult += '</tr>';
+                
+                for (let i = 0; i < Math.min(5, analyzedData.length); i++) {
+                    analysisResult += '<tr>';
+                    columnNames.forEach(col => {
+                        analysisResult += '<td>' + (analyzedData[i][col] || '') + '</td>';
+                    });
+                    analysisResult += '</tr>';
+                }
+                analysisResult += '</table>';
+                
+                resultArea.innerHTML = analysisResult;
+                exportBtn.disabled = false;
+            }
+            
+            // 提取身份证信息
+            function extractIdInfo() {
+                if (analyzedData.length === 0) {
+                    alert('请先分析数据');
+                    return;
+                }
+                
+                // 尝试自动检测身份证列
+                let idColumn = null;
+                const firstRow = analyzedData[0];
+                const columns = Object.keys(firstRow);
+                
+                for (let col of columns) {
+                    if (isIdNumber(firstRow[col])) {
+                        idColumn = col;
+                        break;
+                    }
+                }
+                
+                if (!idColumn) {
+                    idColumn = prompt('未自动检测到身份证列，请输入包含身份证的列名:', columns[0]);
+                    if (!idColumn || !columns.includes(idColumn)) {
+                        alert('无效的列名');
+                        return;
+                    }
+                }
+                
+                let idInfoResult = '<h3>身份证信息提取结果</h3>';
+                let validIdCount = 0;
+                
+                // 处理每行数据
+                analyzedData.forEach(row => {
+                    const idNumber = row[idColumn];
+                    if (isIdNumber(idNumber)) {
+                        validIdCount++;
+                        const info = parseIdNumber(idNumber);
+                        
+                        idInfoResult += `
+                            <div class="id-card">
+                                <h4>身份证: ${idNumber}</h4>
+                                <p>出生日期: ${info.birthday}</p>
+                                <p>性别: ${info.gender}</p>
+                                <p>年龄: ${info.age}</p>
+                                <p>籍贯: ${info.province}</p>
+                            </div>
+                        `;
+                        
+                        // 将提取的信息添加到原始数据中
+                        row['出生日期'] = info.birthday;
+                        row['性别'] = info.gender;
+                        row['年龄'] = info.age;
+                        row['籍贯'] = info.province;
+                    }
+                });
+                
+                idInfoResult += `<p>共找到 ${validIdCount} 个有效的身份证号码</p>`;
+                resultArea.innerHTML = idInfoResult;
+                exportBtn.disabled = false;
+            }
+            
+            // 验证身份证号码
+            function isIdNumber(id) {
+                if (typeof id !== 'string') return false;
+                // 简单验证15位或18位身份证
+                return /^[1-9]\d{5}(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[\dXx]$/.test(id) ||
+                       /^[1-9]\d{7}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}$/.test(id);
+            }
+            
+            // 解析身份证号码
+            function parseIdNumber(id) {
+                id = id.toString().trim();
+                
+                // 处理15位身份证
+                if (id.length === 15) {
+                    const birthday = '19' + id.substr(6, 2) + '-' + id.substr(8, 2) + '-' + id.substr(10, 2);
+                    const genderCode = parseInt(id.substr(14, 1));
+                    const gender = genderCode % 2 === 1 ? '男' : '女';
+                    const province = getProvince(id.substr(0, 2));
+                    
+                    return {
+                        birthday: birthday,
+                        gender: gender,
+                        age: calculateAge(birthday),
+                        province: province
+                    };
+                }
+                
+                // 处理18位身份证
+                if (id.length === 18) {
+                    const birthday = id.substr(6, 4) + '-' + id.substr(10, 2) + '-' + id.substr(12, 2);
+                    const genderCode = parseInt(id.substr(16, 1));
+                    const gender = genderCode % 2 === 1 ? '男' : '女';
+                    const province = getProvince(id.substr(0, 2));
+                    
+                    return {
+                        birthday: birthday,
+                        gender: gender,
+                        age: calculateAge(birthday),
+                        province: province
+                    };
+                }
+                
+                return {
+                    birthday: '未知',
+                    gender: '未知',
+                    age: '未知',
+                    province: '未知'
+                };
+            }
+            
+            // 根据行政区划代码获取省份
+            function getProvince(code) {
+                const provinceMap = {
+                    '11': '北京', '12': '天津', '13': '河北', '14': '山西', '15': '内蒙古',
+                    '21': '辽宁', '22': '吉林', '23': '黑龙江', '31': '上海', '32': '江苏',
+                    '33': '浙江', '34': '安徽', '35': '福建', '36': '江西', '37': '山东',
+                    '41': '河南', '42': '湖北', '43': '湖南', '44': '广东', '45': '广西',
+                    '46': '海南', '50': '重庆', '51': '四川', '52': '贵州', '53': '云南',
+                    '54': '西藏', '61': '陕西', '62': '甘肃', '63': '青海', '64': '宁夏',
+                    '65': '新疆', '71': '台湾', '81': '香港', '82': '澳门'
+                };
+                return provinceMap[code] || '未知';
+            }
+            
+            // 计算年龄
+            function calculateAge(birthday) {
+                const birthDate = new Date(birthday);
+                const today = new Date();
+                let age = today.getFullYear() - birthDate.getFullYear();
+                const monthDiff = today.getMonth() - birthDate.getMonth();
+                
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                    age--;
+                }
+                
+                return age;
+            }
+            
+            // 导出结果
+            function exportResults() {
+                if (analyzedData.length === 0) return;
+                
+                // 创建工作表
+                const ws = XLSX.utils.json_to_sheet(analyzedData);
+                
+                // 创建工作簿
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "分析结果");
+                
+                // 导出Excel文件
+                XLSX.writeFile(wb, "分析结果.xlsx");
+            }
+        });
+    </script>
+</body>
+</html>
