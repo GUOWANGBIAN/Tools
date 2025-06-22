@@ -22,8 +22,15 @@ const tools = [
         name: "身份证信息提取",
         description: "身份证信息提取",
         filename: "tool4.html",
-        icon: "img/default-tool.png"  // 使用默认图标
+        icon: "./img/tool1/jpg"  // 使用默认图标
+    },
+        {
+        name: "图床连接处理",
+        description: "为个人图床制作的专用链接生成",
+        filename: "tool3.html",
+        icon: "./img/tool1.jpg"  // 自定义图标路径
     }
+
 ];
 
 // DOM加载完成后初始化

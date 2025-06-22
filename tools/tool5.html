@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学生成绩波动分析器</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: url('background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .exam-form {
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: rgba(240, 240, 240, 0.7);
+            border-radius: 10px;
+        }
+        
+        .exam-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        
+        .subject-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        
+        input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 80px;
+        }
+        
+        .error {
+            border-color: #e74c3c;
+            background-color: #fadbd8;
+        }
+        
+        .error-message {
+            color: #e74c3c;
+            font-size: 0.8em;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .add-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 20px;
+        }
+        
+        .add-btn:hover {
+            background-color: #2980b9;
+            transform: scale(1.1);
+        }
+        
+        .remove-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .remove-btn:hover {
+            background-color: #c0392b;
+        }
+        
+        .analyze-btn {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 12px 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: block;
+            margin: 20px auto;
+        }
+        
+        .analyze-btn:hover {
+            background-color: #27ae60;
+            transform: translateY(-2px);
+        }
+        
+        .results {
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .chart-container {
+            margin-bottom: 40px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .stats-table th, .stats-table td {
+            padding: 12px 15px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        
+        .stats-table th {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .stats-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        
+        .stats-table tr:hover {
+            background-color: #e6f7ff;
+        }
+        
+        .tab-container {
+            margin-top: 30px;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        
+        .tab-btn {
+            padding: 10px 20px;
+            background-color: #bdc3c7;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+        
+        .tab-btn.active {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background-color: white;
+            border-radius: 0 5px 5px 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .file-upload {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .file-upload-btn {
+            background-color: #9b59b6;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .file-upload-btn:hover {
+            background-color: #8e44ad;
+        }
+        
+        .export-btn {
+            background-color: #f39c12;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+        
+        .export-btn:hover {
+            background-color: #d35400;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>学生成绩波动分析器</h1>
+        
+        <div class="file-upload">
+            <input type="file" id="multiFileInput" accept=".xlsx,.xls" multiple style="display: none;">
+            <button class="file-upload-btn" onclick="document.getElementById('multiFileInput').click()">导入多个学生成绩Excel文件</button>
+        </div>
+        
+        <div id="singleStudentSection">
+            <h2>单个学生成绩录入</h2>
+            <div id="examFormsContainer">
+                <div class="exam-form" id="examForm1">
+                    <div class="exam-row">
+                        <div class="subject-group">
+                            <label for="examName1">考试名称</label>
+                            <input type="text" id="examName1" placeholder="如：期中考试">
+                        </div>
+                        <div class="subject-group">
+                            <label for="chinese1">语文</label>
+                            <input type="number" id="chinese1" min="0" max="150" placeholder="0-150">
+                            <div class="error-message" id="chineseError1"></div>
+                        </div>
+                        <div class="subject-group">
+                            <label for="math1">数学</label>
+                            <input type="number" id="math1" min="0" max="150" placeholder="0-150">
+                            <div class="error-message" id="mathError1"></div>
+                        </div>
+                        <div class="subject-group">
+                            <label for="english1">英语</label>
+                            <input type="number" id="english1" min="0" max="150" placeholder="0-150">
+                            <div class="error-message" id="englishError1"></div>
+                        </div>
+                        <div class="subject-group">
+                            <label for="physics1">物理</label>
+                            <input type="number" id="physics1" min="0" max="100" placeholder="0-100">
+                            <div class="error-message" id="physicsError1"></div>
+                        </div>
+                        <div class="subject-group">
+                            <label for="chemistry1">化学</label>
+                            <input type="number" id="chemistry1" min="0" max="100" placeholder="0-100">
+                            <div class="error-message" id="chemistryError1"></div>
+                        </div>
+                        <div class="subject-group">
+                            <label for="biology1">生物</label>
+                            <input type="number" id="biology1" min="0" max="100" placeholder="0-100">
+                            <div class="error-message" id="biologyError1"></div>
+                        </div>
+                        <div class="subject-group">
+                            <label for="politics1">政治</label>
+                            <input type="number" id="politics1" min="0" max="100" placeholder="0-100">
+                            <div class="error-message" id="politicsError1"></div>
+                        </div>
+                        <div class="subject-group">
+                            <label for="history1">历史</label>
+                            <input type="number" id="history1" min="0" max="100" placeholder="0-100">
+                            <div class="error-message" id="historyError1"></div>
+                        </div>
+                        <div class="subject-group">
+                            <label for="geography1">地理</label>
+                            <input type="number" id="geography1" min="0" max="100" placeholder="0-100">
+                            <div class="error-message" id="geographyError1"></div>
+                        </div>
+                        <button class="add-btn" onclick="addExamForm()">+</button>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="analyze-btn" onclick="analyzeResults()">分析成绩</button>
+        </div>
+        
+        <div class="results" id="results">
+            <h2>分析结果</h2>
+            
+            <div class="tab-container">
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="openTab('stats')">统计数据</button>
+                    <button class="tab-btn" onclick="openTab('trend')">趋势图表</button>
+                    <button class="tab-btn" onclick="openTab('radar')">雷达图</button>
+                </div>
+                
+                <div id="stats" class="tab-content active">
+                    <h3>考试成绩统计</h3>
+                    <table class="stats-table" id="statsTable">
+                        <thead>
+                            <tr>
+                                <th>考试名称</th>
+                                <th>语文</th>
+                                <th>数学</th>
+                                <th>英语</th>
+                                <th>物理</th>
+                                <th>化学</th>
+                                <th>生物</th>
+                                <th>政治</th>
+                                <th>历史</th>
+                                <th>地理</th>
+                                <th>平均分</th>
+                            </tr>
+                        </thead>
+                        <tbody id="statsBody">
+                        </tbody>
+                    </table>
+                    
+                    <h3>成绩波动分析（方差）</h3>
+                    <table class="stats-table" id="varianceTable">
+                        <thead>
+                            <tr>
+                                <th>科目</th>
+                                <th>方差</th>
+                                <th>波动分析</th>
+                            </tr>
+                        </thead>
+                        <tbody id="varianceBody">
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="trend" class="tab-content">
+                    <h3>成绩变化趋势</h3>
+                    <div class="chart-container">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+                
+                <div id="radar" class="tab-content">
+                    <h3>成绩分布雷达图</h3>
+                    <div class="chart-container">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="export-btn" onclick="exportToExcel()">导出到Excel</button>
+        </div>
+        
+        <div id="multiStudentResults" style="display: none;">
+            <h2>多学生分析结果</h2>
+            <div id="multiStudentCharts"></div>
+        </div>
+    </div>
+
+    <script>
+        let examCount = 1;
+        let allExams = [];
+        let multiStudentData = {};
+        
+        // 添加考试表单
+        function addExamForm() {
+            examCount++;
+            const container = document.getElementById('examFormsContainer');
+            const newForm = document.createElement('div');
+            newForm.className = 'exam-form';
+            newForm.id = `examForm${examCount}`;
+            
+            newForm.innerHTML = `
+                <div class="exam-row">
+                    <div class="subject-group">
+                        <label for="examName${examCount}">考试名称</label>
+                        <input type="text" id="examName${examCount}" placeholder="如：期中考试">
+                    </div>
+                    <div class="subject-group">
+                        <label for="chinese${examCount}">语文</label>
+                        <input type="number" id="chinese${examCount}" min="0" max="150" placeholder="0-150">
+                        <div class="error-message" id="chineseError${examCount}"></div>
+                    </div>
+                    <div class="subject-group">
+                        <label for="math${examCount}">数学</label>
+                        <input type="number" id="math${examCount}" min="0" max="150" placeholder="0-150">
+                        <div class="error-message" id="mathError${examCount}"></div>
+                    </div>
+                    <div class="subject-group">
+                        <label for="english${examCount}">英语</label>
+                        <input type="number" id="english${examCount}" min="0" max="150" placeholder="0-150">
+                        <div class="error-message" id="englishError${examCount}"></div>
+                    </div>
+                    <div class="subject-group">
+                        <label for="physics${examCount}">物理</label>
+                        <input type="number" id="physics${examCount}" min="0" max="100" placeholder="0-100">
+                        <div class="error-message" id="physicsError${examCount}"></div>
+                    </div>
+                    <div class="subject-group">
+                        <label for="chemistry${examCount}">化学</label>
+                        <input type="number" id="chemistry${examCount}" min="0" max="100" placeholder="0-100">
+                        <div class="error-message" id="chemistryError${examCount}"></div>
+                    </div>
+                    <div class="subject-group">
+                        <label for="biology${examCount}">生物</label>
+                        <input type="number" id="biology${examCount}" min="0" max="100" placeholder="0-100">
+                        <div class="error-message" id="biologyError${examCount}"></div>
+                    </div>
+                    <div class="subject-group">
+                        <label for="politics${examCount}">政治</label>
+                        <input type="number" id="politics${examCount}" min="0" max="100" placeholder="0-100">
+                        <div class="error-message" id="politicsError${examCount}"></div>
+                    </div>
+                    <div class="subject-group">
+                        <label for="history${examCount}">历史</label>
+                        <input type="number" id="history${examCount}" min="0" max="100" placeholder="0-100">
+                        <div class="error-message" id="historyError${examCount}"></div>
+                    </div>
+                    <div class="subject-group">
+                        <label for="geography${examCount}">地理</label>
+                        <input type="number" id="geography${examCount}" min="0" max="100" placeholder="0-100">
+                        <div class="error-message" id="geographyError${examCount}"></div>
+                    </div>
+                    <button class="remove-btn" onclick="removeExamForm(${examCount})">删除</button>
+                </div>
+            `;
+            
+            container.appendChild(newForm);
+        }
+        
+        // 删除考试表单
+        function removeExamForm(id) {
+            const form = document.getElementById(`examForm${id}`);
+            if (form && examCount > 1) {
+                form.remove();
+                examCount--;
+            }
+        }
+        
+        // 验证输入
+        function validateInputs() {
+            let isValid = true;
+            
+            for (let i = 1; i <= examCount; i++) {
+                const form = document.getElementById(`examForm${i}`);
+                if (!form) continue;
+                
+                // 验证必选科目
+                const chinese = document.getElementById(`chinese${i}`);
+                const math = document.getElementById(`math${i}`);
+                const english = document.getElementById(`english${i}`);
+                
+                // 验证选考科目
+                const physics = document.getElementById(`physics${i}`);
+                const chemistry = document.getElementById(`chemistry${i}`);
+                const biology = document.getElementById(`biology${i}`);
+                const politics = document.getElementById(`politics${i}`);
+                const history = document.getElementById(`history${i}`);
+                const geography = document.getElementById(`geography${i}`);
+                
+                // 重置错误状态
+                [chinese, math, english, physics, chemistry, biology, politics, history, geography].forEach(input => {
+                    if (input) {
+                        input.classList.remove('error');
+                        const errorMsg = document.getElementById(`${input.id}Error${i}`);
+                        if (errorMsg) errorMsg.style.display = 'none';
+                    }
+                });
+                
+                // 验证必选科目
+                if (chinese && (chinese.value === '' || chinese.value < 0 || chinese.value > 150)) {
+                    chinese.classList.add('error');
+                    document.getElementById(`chineseError${i}`).textContent = '请输入0-150之间的分数';
+                    document.getElementById(`chineseError${i}`).style.display = 'block';
+                    isValid = false;
+                }
+                
+                if (math && (math.value === '' || math.value < 0 || math.value > 150)) {
+                    math.classList.add('error');
+                    document.getElementById(`mathError${i}`).textContent = '请输入0-150之间的分数';
+                    document.getElementById(`mathError${i}`).style.display = 'block';
+                    isValid = false;
+                }
+                
+                if (english && (english.value === '' || english.value < 0 || english.value > 150)) {
+                    english.classList.add('error');
+                    document.getElementById(`englishError${i}`).textContent = '请输入0-150之间的分数';
+                    document.getElementById(`englishError${i}`).style.display = 'block';
+                    isValid = false;
+                }
+                
+                // 验证选考科目
+                const electiveSubjects = [physics, chemistry, biology, politics, history, geography];
+                let selectedCount = 0;
+                let hasPhysics = false;
+                let hasHistory = false;
+                
+                electiveSubjects.forEach(subject => {
+                    if (subject && subject.value !== '') {
+                        if (subject.value < 0 || subject.value > 100) {
+                            subject.classList.add('error');
+                            document.getElementById(`${subject.id}Error${i}`).textContent = '请输入0-100之间的分数';
+                            document.getElementById(`${subject.id}Error${i}`).style.display = 'block';
+                            isValid = false;
+                        } else {
+                            selectedCount++;
+                            if (subject.id.includes('physics')) hasPhysics = true;
+                            if (subject.id.includes('history')) hasHistory = true;
+                        }
+                    }
+                });
+                
+                // 检查选考科目数量
+                if (selectedCount !== 3) {
+                    alert(`第${i}次考试: 请选择3门选考科目`);
+                    isValid = false;
+                }
+                
+                // 检查物理和历史不能同时选择
+                if (hasPhysics && hasHistory) {
+                    alert(`第${i}次考试: 物理和历史不能同时选择`);
+                    isValid = false;
+                }
+            }
+            
+            return isValid;
+        }
+        
+        // 收集考试数据
+        function collectExamData() {
+            allExams = [];
+            
+            for (let i = 1; i <= examCount; i++) {
+                const form = document.getElementById(`examForm${i}`);
+                if (!form) continue;
+                
+                const examName = document.getElementById(`examName${i}`).value || `考试${i}`;
+                const chinese = parseFloat(document.getElementById(`chinese${i}`).value) || 0;
+                const math = parseFloat(document.getElementById(`math${i}`).value) || 0;
+                const english = parseFloat(document.getElementById(`english${i}`).value) || 0;
+                
+                const physics = document.getElementById(`physics${i}`).value !== '' ? parseFloat(document.getElementById(`physics${i}`).value) : null;
+                const chemistry = document.getElementById(`chemistry${i}`).value !== '' ? parseFloat(document.getElementById(`chemistry${i}`).value) : null;
+                const biology = document.getElementById(`biology${i}`).value !== '' ? parseFloat(document.getElementById(`biology${i}`).value) : null;
+                const politics = document.getElementById(`politics${i}`).value !== '' ? parseFloat(document.getElementById(`politics${i}`).value) : null;
+                const history = document.getElementById(`history${i}`).value !== '' ? parseFloat(document.getElementById(`history${i}`).value) : null;
+                const geography = document.getElementById(`geography${i}`).value !== '' ? parseFloat(document.getElementById(`geography${i}`).value) : null;
+                
+                // 计算平均分
+                const selectedSubjects = [physics, chemistry, biology, politics, history, geography].filter(score => score !== null);
+                const average = (chinese + math + english + selectedSubjects.reduce((a, b) => a + b, 0)) / (3 + selectedSubjects.length);
+                
+                allExams.push({
+                    examName,
+                    chinese,
+                    math,
+                    english,
+                    physics,
+                    chemistry,
+                    biology,
+                    politics,
+                    history,
+                    geography,
+                    average
+                });
+            }
+        }
+        
+        // 计算方差
+        function calculateVariance(scores) {
+            if (scores.length < 2) return 0;
+            
+            const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
+            return scores.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / scores.length;
+        }
+        
+        // 分析波动情况
+        function analyzeFluctuation(variance, subject) {
+            const thresholds = {
+                'chinese': [50, 100],
+                'math': [60, 120],
+                'english': [50, 100],
+                'default': [30, 60]
+            };
+            
+            const threshold = thresholds[subject] || thresholds['default'];
+            
+            if (variance < threshold[0]) return '成绩稳定';
+            if (variance < threshold[1]) return '成绩有一定波动';
+            return '成绩波动较大';
+        }
+        
+        // 显示分析结果
+        function displayResults() {
+            // 显示考试成绩表格
+            const statsBody = document.getElementById('statsBody');
+            statsBody.innerHTML = '';
+            
+            allExams.forEach(exam => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${exam.examName}</td>
+                    <td>${exam.chinese}</td>
+                    <td>${exam.math}</td>
+                    <td>${exam.english}</td>
+                    <td>${exam.physics !== null ? exam.physics : '-'}</td>
+                    <td>${exam.chemistry !== null ? exam.chemistry : '-'}</td>
+                    <td>${exam.biology !== null ? exam.biology : '-'}</td>
+                    <td>${exam.politics !== null ? exam.politics : '-'}</td>
+                    <td>${exam.history !== null ? exam.history : '-'}</td>
+                    <td>${exam.geography !== null ? exam.geography : '-'}</td>
+                    <td>${exam.average.toFixed(2)}</td>
+                `;
+                statsBody.appendChild(row);
+            });
+            
+            // 计算并显示方差
+            const varianceBody = document.getElementById('varianceBody');
+            varianceBody.innerHTML = '';
+            
+            const subjects = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
+            
+            subjects.forEach(subject => {
+                // 检查该科目是否有数据
+                const hasData = allExams.some(exam => exam[subject] !== null);
+                if (!hasData) return;
+                
+                const scores = allExams.map(exam => exam[subject]).filter(score => score !== null);
+                const variance = calculateVariance(scores);
+                const fluctuation = analyzeFluctuation(variance, subject);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${getSubjectName(subject)}</td>
+                    <td>${variance.toFixed(2)}</td>
+                    <td>${fluctuation}</td>
+                `;
+                varianceBody.appendChild(row);
+            });
+            
+            // 创建趋势图表
+            createTrendChart();
+            
+            // 创建雷达图
+            createRadarChart();
+            
+            // 显示结果区域
+            document.getElementById('results').style.display = 'block';
+        }
+        
+        // 获取科目中文名称
+        function getSubjectName(subject) {
+            const names = {
+                'chinese': '语文',
+                'math': '数学',
+                'english': '英语',
+                'physics': '物理',
+                'chemistry': '化学',
+                'biology': '生物',
+                'politics': '政治',
+                'history': '历史',
+                'geography': '地理'
+            };
+            return names[subject] || subject;
+        }
+        
+        // 创建趋势图表
+        function createTrendChart() {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            
+            // 收集所有有数据的科目
+            const subjects = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
+            const activeSubjects = subjects.filter(subject => 
+                allExams.some(exam => exam[subject] !== null)
+            );
+            
+            const datasets = activeSubjects.map(subject => {
+                return {
+                    label: getSubjectName(subject),
+                    data: allExams.map(exam => exam[subject]),
+                    borderWidth: 2,
+                    fill: false
+                };
+            });
+            
+            // 添加平均分曲线
+            datasets.push({
+                label: '平均分',
+                data: allExams.map(exam => exam.average),
+                borderWidth: 3,
+                borderColor: '#000000',
+                fill: false,
+                borderDash: [5, 5]
+            });
+            
+            if (window.trendChart) {
+                window.trendChart.destroy();
+            }
+            
+            window.trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: allExams.map(exam => exam.examName),
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 150
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 创建雷达图
+        function createRadarChart() {
+            const ctx = document.getElementById('radarChart').getContext('2d');
+            
+            // 只显示最后一次考试的成绩
+            const lastExam = allExams[allExams.length - 1];
+            const subjects = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
+            const activeSubjects = subjects.filter(subject => lastExam[subject] !== null);
+            
+            const data = {
+                labels: activeSubjects.map(getSubjectName),
+                datasets: [{
+                    label: lastExam.examName,
+                    data: activeSubjects.map(subject => lastExam[subject]),
+                    fill: true,
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgb(54, 162, 235)',
+                    pointBackgroundColor: 'rgb(54, 162, 235)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgb(54, 162, 235)'
+                }]
+            };
+            
+            if (window.radarChart) {
+                window.radarChart.destroy();
+            }
+            
+            window.radarChart = new Chart(ctx, {
+                type: 'radar',
+                data: data,
+                options: {
+                    responsive: true,
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: true
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 150
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 打开标签页
+        function openTab(tabId) {
+            const tabContents = document.getElementsByClassName('tab-content');
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove('active');
+            }
+            
+            const tabButtons = document.getElementsByClassName('tab-btn');
+            for (let i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove('active');
+            }
+            
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+        
+        // 导出到Excel
+        function exportToExcel() {
+            // 创建工作簿
+            const wb = XLSX.utils.book_new();
+            
+            // 创建考试成绩表
+            const examData = [
+                ['考试名称', '语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理', '平均分'],
+                ...allExams.map(exam => [
+                    exam.examName,
+                    exam.chinese,
+                    exam.math,
+                    exam.english,
+                    exam.physics !== null ? exam.physics : '-',
+                    exam.chemistry !== null ? exam.chemistry : '-',
+                    exam.biology !== null ? exam.biology : '-',
+                    exam.politics !== null ? exam.politics : '-',
+                    exam.history !== null ? exam.history : '-',
+                    exam.geography !== null ? exam.geography : '-',
+                    exam.average.toFixed(2)
+                ])
+            ];
+            
+            const examWs = XLSX.utils.aoa_to_sheet(examData);
+            XLSX.utils.book_append_sheet(wb, examWs, '考试成绩');
+            
+            // 创建方差分析表
+            const varianceData = [['科目', '方差', '波动分析']];
+            
+            const subjects = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
+            subjects.forEach(subject => {
+                // 检查该科目是否有数据
+                const hasData = allExams.some(exam => exam[subject] !== null);
+                if (!hasData) return;
+                
+                const scores = allExams.map(exam => exam[subject]).filter(score => score !== null);
+                const variance = calculateVariance(scores);
+                const fluctuation = analyzeFluctuation(variance, subject);
+                
+                varianceData.push([
+                    getSubjectName(subject),
+                    variance.toFixed(2),
+                    fluctuation
+                ]);
+            });
+            
+            const varianceWs = XLSX.utils.aoa_to_sheet(varianceData);
+            XLSX.utils.book_append_sheet(wb, varianceWs, '方差分析');
+            
+            // 导出工作簿
+            XLSX.writeFile(wb, '成绩分析报告.xlsx');
+        }
+        
+        // 分析多学生数据
+        function analyzeMultiStudentData(files) {
+            document.getElementById('singleStudentSection').style.display = 'none';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('multiStudentResults').style.display = 'block';
+            
+            const chartsContainer = document.getElementById('multiStudentCharts');
+            chartsContainer.innerHTML = '<h3>正在分析数据，请稍候...</h3>';
+            
+            multiStudentData = {};
+            
+            let filesProcessed = 0;
+            
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // 假设每个文件的第一张表是成绩数据
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                    
+                    // 提取学生姓名（假设第一行是标题，第二行开始是数据）
+                    const studentName = file.name.replace('.xlsx', '').replace('.xls', '');
+                    multiStudentData[studentName] = jsonData;
+                    
+                    filesProcessed++;
+                    
+                    if (filesProcessed === files.length) {
+                        renderMultiStudentCharts();
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            });
+        }
+        
+        // 渲染多学生图表
+        function renderMultiStudentCharts() {
+            const container = document.getElementById('multiStudentCharts');
+            container.innerHTML = '';
+            
+            // 为每个学生创建图表
+            Object.keys(multiStudentData).forEach(studentName => {
+                const studentData = multiStudentData[studentName];
+                
+                // 创建学生卡片
+                const studentCard = document.createElement('div');
+                studentCard.className = 'exam-form';
+                studentCard.innerHTML = `<h3>${studentName}</h3>`;
+                
+                // 创建趋势图表容器
+                const trendCanvas = document.createElement('canvas');
+                trendCanvas.id = `trendChart_${studentName}`;
+                studentCard.appendChild(trendCanvas);
+                
+                // 创建雷达图容器
+                const radarCanvas = document.createElement('canvas');
+                radarCanvas.id = `radarChart_${studentName}`;
+                studentCard.appendChild(radarCanvas);
+                
+                container.appendChild(studentCard);
+                
+                // 渲染趋势图
+                renderStudentTrendChart(studentName, studentData);
+                
+                // 渲染雷达图
+                renderStudentRadarChart(studentName, studentData);
+            });
+            
+            // 添加导出按钮
+            const exportBtn = document.createElement('button');
+            exportBtn.className = 'export-btn';
+            exportBtn.textContent = '导出所有学生数据到Excel';
+            exportBtn.onclick = exportAllStudentsToExcel;
+            container.appendChild(exportBtn);
+        }
+        
+        // 渲染学生趋势图
+        function renderStudentTrendChart(studentName, studentData) {
+            const ctx = document.getElementById(`trendChart_${studentName}`).getContext('2d');
+            
+            // 收集所有考试名称
+            const examNames = studentData.map(exam => exam['考试名称'] || exam['examName'] || '未命名考试');
+            
+            // 收集所有科目
+            const subjects = ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'];
+            const activeSubjects = subjects.filter(subject => 
+                studentData.some(exam => exam[subject] !== undefined)
+            );
+            
+            const datasets = activeSubjects.map(subject => {
+                return {
+                    label: subject,
+                    data: studentData.map(exam => exam[subject]),
+                    borderWidth: 2,
+                    fill: false
+                };
+            });
+            
+            // 添加平均分曲线
+            datasets.push({
+                label: '平均分',
+                data: studentData.map(exam => {
+                    const scores = activeSubjects.map(subject => exam[subject]).filter(score => score !== undefined);
+                    return scores.reduce((a, b) => a + b, 0) / scores.length;
+                }),
+                borderWidth: 3,
+                borderColor: '#000000',
+                fill: false,
+                borderDash: [5, 5]
+            });
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: examNames,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 150
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 渲染学生雷达图
+        function renderStudentRadarChart(studentName, studentData) {
+            const ctx = document.getElementById(`radarChart_${studentName}`).getContext('2d');
+            
+            // 只显示最后一次考试的成绩
+            const lastExam = studentData[studentData.length - 1];
+            const subjects = ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'];
+            const activeSubjects = subjects.filter(subject => lastExam[subject] !== undefined);
+            
+            const data = {
+                labels: activeSubjects,
+                datasets: [{
+                    label: lastExam['考试名称'] || lastExam['examName'] || '最后一次考试',
+                    data: activeSubjects.map(subject => lastExam[subject]),
+                    fill: true,
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgb(54, 162, 235)',
+                    pointBackgroundColor: 'rgb(54, 162, 235)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgb(54, 162, 235)'
+                }]
+            };
+            
+            new Chart(ctx, {
+                type: 'radar',
+                data: data,
+                options: {
+                    responsive: true,
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: true
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 150
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 导出所有学生数据到Excel
+        function exportAllStudentsToExcel() {
+            // 创建工作簿
+            const wb = XLSX.utils.book_new();
+            
+            // 为每个学生创建工作表
+            Object.keys(multiStudentData).forEach(studentName => {
+                const studentData = multiStudentData[studentName];
+                
+                // 创建表头
+                const headers = Object.keys(studentData[0]);
+                const data = [
+                    headers,
+                    ...studentData.map(exam => headers.map(header => exam[header]))
+                ];
+                
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                XLSX.utils.book_append_sheet(wb, ws, studentName.substring(0, 31)); // 限制工作表名称长度
+            });
+            
+            // 导出工作簿
+            XLSX.writeFile(wb, '多学生成绩分析报告.xlsx');
+        }
+        
+        // 主分析函数
+        function analyzeResults() {
+            if (!validateInputs()) return;
+            
+            collectExamData();
+            displayResults();
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 多文件上传处理
+            document.getElementById('multiFileInput').addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    analyzeMultiStudentData(e.target.files);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
