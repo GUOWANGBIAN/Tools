@@ -11,7 +11,8 @@
             font-family: 'Arial', sans-serif;
             margin: 0;
             padding: 20px;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: url('/img/background.png') no-repeat center center fixed;
+            background-size: cover;
             color: #333;
             min-height: 100vh;
         }
@@ -22,7 +23,7 @@
             background-color: rgba(255, 255, 255, 0.95);
             padding: 30px;
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
         
         h1 {
@@ -430,7 +431,23 @@
                     </div>
                     
                     <div class="subject-selector" id="electiveSelector1">
-                        <!-- 动态生成选修科目选择 -->
+                        <p>请选择2门选修科目：</p>
+                        <div class="subject-checkbox">
+                            <input type="checkbox" id="chemistry1" value="化学">
+                            <label for="chemistry1">化学</label>
+                        </div>
+                        <div class="subject-checkbox">
+                            <input type="checkbox" id="biology1" value="生物">
+                            <label for="biology1">生物</label>
+                        </div>
+                        <div class="subject-checkbox">
+                            <input type="checkbox" id="politics1" value="政治">
+                            <label for="politics1">政治</label>
+                        </div>
+                        <div class="subject-checkbox">
+                            <input type="checkbox" id="geography1" value="地理">
+                            <label for="geography1">地理</label>
+                        </div>
                     </div>
                     
                     <div class="exam-row">
@@ -465,22 +482,22 @@
                         </div>
                         <div class="subject-group">
                             <label for="chemistry1">化学 (100)</label>
-                            <input type="number" id="chemistry1" min="0" max="100" placeholder="0-100">
+                            <input type="number" id="chemistryScore1" min="0" max="100" placeholder="0-100">
                             <div class="error-message" id="chemistryError1"></div>
                         </div>
                         <div class="subject-group">
                             <label for="biology1">生物 (100)</label>
-                            <input type="number" id="biology1" min="0" max="100" placeholder="0-100">
+                            <input type="number" id="biologyScore1" min="0" max="100" placeholder="0-100">
                             <div class="error-message" id="biologyError1"></div>
                         </div>
                         <div class="subject-group">
                             <label for="politics1">政治 (100)</label>
-                            <input type="number" id="politics1" min="0" max="100" placeholder="0-100">
+                            <input type="number" id="politicsScore1" min="0" max="100" placeholder="0-100">
                             <div class="error-message" id="politicsError1"></div>
                         </div>
                         <div class="subject-group">
                             <label for="geography1">地理 (100)</label>
-                            <input type="number" id="geography1" min="0" max="100" placeholder="0-100">
+                            <input type="number" id="geographyScore1" min="0" max="100" placeholder="0-100">
                             <div class="error-message" id="geographyError1"></div>
                         </div>
                         <button class="add-btn" onclick="addExamForm()">+</button>
@@ -569,61 +586,6 @@
         let allExams = [];
         let multiStudentData = {};
         
-        // 初始化页面
-        document.addEventListener('DOMContentLoaded', function() {
-            // 初始化第一个表单的选修科目选择
-            updateElectiveSubjects(1);
-            
-            // 监听方向选择变化
-            document.querySelectorAll('input[name="direction1"]').forEach(radio => {
-                radio.addEventListener('change', function() {
-                    updateElectiveSubjects(1);
-                });
-            });
-            
-            // 多文件上传处理
-            document.getElementById('multiFileInput').addEventListener('change', function(e) {
-                if (e.target.files.length > 0) {
-                    analyzeMultiStudentData(e.target.files);
-                }
-            });
-        });
-        
-        // 更新选修科目选择
-        function updateElectiveSubjects(formId) {
-            const selector = document.getElementById(`electiveSelector${formId}`);
-            if (!selector) return;
-            
-            const direction = document.querySelector(`input[name="direction${formId}"]:checked`).value;
-            const electiveSubjects = direction === 'physics' 
-                ? ['化学', '生物', '政治', '地理'] 
-                : ['化学', '生物', '政治', '地理'];
-            
-            selector.innerHTML = '<p>请选择2门选修科目：</p>';
-            
-            electiveSubjects.forEach((subject, index) => {
-                const checkboxId = `elective${formId}-${index}`;
-                const checkboxDiv = document.createElement('div');
-                checkboxDiv.className = 'subject-checkbox';
-                checkboxDiv.innerHTML = `
-                    <input type="checkbox" id="${checkboxId}" value="${subject}">
-                    <label for="${checkboxId}">${subject}</label>
-                `;
-                selector.appendChild(checkboxDiv);
-            });
-            
-            // 添加复选框限制逻辑
-            const checkboxes = selector.querySelectorAll('input[type="checkbox"]');
-            checkboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    const checkedCount = Array.from(checkboxes).filter(c => c.checked).length;
-                    if (checkedCount > 2) {
-                        this.checked = false;
-                    }
-                });
-            });
-        }
-        
         // 添加考试表单
         function addExamForm() {
             examCount++;
@@ -645,7 +607,23 @@
                 </div>
                 
                 <div class="subject-selector" id="electiveSelector${examCount}">
-                    <!-- 动态生成选修科目选择 -->
+                    <p>请选择2门选修科目：</p>
+                    <div class="subject-checkbox">
+                        <input type="checkbox" id="chemistry${examCount}" value="化学">
+                        <label for="chemistry${examCount}">化学</label>
+                    </div>
+                    <div class="subject-checkbox">
+                        <input type="checkbox" id="biology${examCount}" value="生物">
+                        <label for="biology${examCount}">生物</label>
+                    </div>
+                    <div class="subject-checkbox">
+                        <input type="checkbox" id="politics${examCount}" value="政治">
+                        <label for="politics${examCount}">政治</label>
+                    </div>
+                    <div class="subject-checkbox">
+                        <input type="checkbox" id="geography${examCount}" value="地理">
+                        <label for="geography${examCount}">地理</label>
+                    </div>
                 </div>
                 
                 <div class="exam-row">
@@ -680,22 +658,22 @@
                     </div>
                     <div class="subject-group">
                         <label for="chemistry${examCount}">化学 (100)</label>
-                        <input type="number" id="chemistry${examCount}" min="0" max="100" placeholder="0-100">
+                        <input type="number" id="chemistryScore${examCount}" min="0" max="100" placeholder="0-100">
                         <div class="error-message" id="chemistryError${examCount}"></div>
                     </div>
                     <div class="subject-group">
                         <label for="biology${examCount}">生物 (100)</label>
-                        <input type="number" id="biology${examCount}" min="0" max="100" placeholder="0-100">
+                        <input type="number" id="biologyScore${examCount}" min="0" max="100" placeholder="0-100">
                         <div class="error-message" id="biologyError${examCount}"></div>
                     </div>
                     <div class="subject-group">
                         <label for="politics${examCount}">政治 (100)</label>
-                        <input type="number" id="politics${examCount}" min="0" max="100" placeholder="0-100">
+                        <input type="number" id="politicsScore${examCount}" min="0" max="100" placeholder="0-100">
                         <div class="error-message" id="politicsError${examCount}"></div>
                     </div>
                     <div class="subject-group">
                         <label for="geography${examCount}">地理 (100)</label>
-                        <input type="number" id="geography${examCount}" min="0" max="100" placeholder="0-100">
+                        <input type="number" id="geographyScore${examCount}" min="0" max="100" placeholder="0-100">
                         <div class="error-message" id="geographyError${examCount}"></div>
                     </div>
                     <button class="remove-btn" onclick="removeExamForm(${examCount})">删除</button>
@@ -704,13 +682,14 @@
             
             container.appendChild(newForm);
             
-            // 初始化新表单的选修科目选择
-            updateElectiveSubjects(examCount);
-            
-            // 监听方向选择变化
-            document.querySelectorAll(`input[name="direction${examCount}"]`).forEach(radio => {
-                radio.addEventListener('change', function() {
-                    updateElectiveSubjects(examCount);
+            // 添加复选框限制逻辑
+            const checkboxes = newForm.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const checkedCount = Array.from(checkboxes).filter(c => c.checked).length;
+                    if (checkedCount > 2) {
+                        this.checked = false;
+                    }
                 });
             });
         }
@@ -740,10 +719,10 @@
                 // 验证选考科目
                 const physics = document.getElementById(`physics${i}`);
                 const history = document.getElementById(`history${i}`);
-                const chemistry = document.getElementById(`chemistry${i}`);
-                const biology = document.getElementById(`biology${i}`);
-                const politics = document.getElementById(`politics${i}`);
-                const geography = document.getElementById(`geography${i}`);
+                const chemistry = document.getElementById(`chemistryScore${i}`);
+                const biology = document.getElementById(`biologyScore${i}`);
+                const politics = document.getElementById(`politicsScore${i}`);
+                const geography = document.getElementById(`geographyScore${i}`);
                 
                 // 重置错误状态
                 [chinese, math, english, physics, history, chemistry, biology, politics, geography].forEach(input => {
@@ -805,7 +784,7 @@
                 // 验证选修科目
                 electiveCheckboxes.forEach(checkbox => {
                     const subject = checkbox.value;
-                    const inputId = `${subject.toLowerCase()}${i}`;
+                    const inputId = `${subject.toLowerCase()}Score${i}`;
                     const input = document.getElementById(inputId);
                     
                     if (input && (input.value === '' || input.value < 0 || input.value > 100)) {
@@ -839,10 +818,16 @@
                 
                 const physics = direction === 'physics' ? (parseFloat(document.getElementById(`physics${i}`).value) || 0) : null;
                 const history = direction === 'history' ? (parseFloat(document.getElementById(`history${i}`).value) || 0) : null;
-                const chemistry = electiveSubjects.includes('化学') ? (parseFloat(document.getElementById(`chemistry${i}`).value) || 0) : null;
-                const biology = electiveSubjects.includes('生物') ? (parseFloat(document.getElementById(`biology${i}`).value) || 0) : null;
-                const politics = electiveSubjects.includes('政治') ? (parseFloat(document.getElementById(`politics${i}`).value) || 0) : null;
-                const geography = electiveSubjects.includes('地理') ? (parseFloat(document.getElementById(`geography${i}`).value) || 0) : null;
+                
+                // 获取选修科目分数
+                let chemistry = null, biology = null, politics = null, geography = null;
+                electiveSubjects.forEach(subject => {
+                    const scoreInput = document.getElementById(`${subject.toLowerCase()}Score${i}`);
+                    if (subject === '化学') chemistry = parseFloat(scoreInput.value) || 0;
+                    if (subject === '生物') biology = parseFloat(scoreInput.value) || 0;
+                    if (subject === '政治') politics = parseFloat(scoreInput.value) || 0;
+                    if (subject === '地理') geography = parseFloat(scoreInput.value) || 0;
+                });
                 
                 // 计算总分
                 const mainSubject = direction === 'physics' ? physics : history;
@@ -1498,11 +1483,35 @@
         
         // 主分析函数
         function analyzeResults() {
-            if (!validateInputs()) return;
+            if (!validateInputs()) {
+                alert('请检查输入数据是否正确！');
+                return;
+            }
             
             collectExamData();
             displayResults();
         }
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            // 添加复选框限制逻辑
+            const checkboxes = document.querySelectorAll('#electiveSelector1 input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const checkedCount = Array.from(checkboxes).filter(c => c.checked).length;
+                    if (checkedCount > 2) {
+                        this.checked = false;
+                    }
+                });
+            });
+            
+            // 多文件上传处理
+            document.getElementById('multiFileInput').addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    analyzeMultiStudentData(e.target.files);
+                }
+            });
+        });
     </script>
 </body>
 </html>
